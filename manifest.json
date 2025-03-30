@@ -1,0 +1,36 @@
+{
+    "manifest_version": 3,
+    "name": "Geely VDI 登录助手",
+    "version": "1.0.1",
+    "description": "自动填写 Geely VDI 一次性验证码",
+    "content_scripts": [
+        {
+            "matches": [
+                "https://vdi.geely.com/logon/LogonPoint/tmindex.html",
+                "https://cdvdi.geely.com/logon/LogonPoint/tmindex.html"
+            ],
+            "js": [
+                "js/content.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "icons": {
+        "16": "images/icon.png",
+        "48": "images/icon.png",
+        "128": "images/icon.png"
+    },
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "action": {
+        "default_title": "Geely VDI 登录助手\n点击重新输入密钥"
+    },
+    "background": {
+        "service_worker": "js/background.js"
+    },
+    "permissions": [
+        "storage",
+        "scripting"
+    ]
+}
