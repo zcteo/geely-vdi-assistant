@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Geely VDI 登录助手
 // @namespace   https://github.com/zcteo
-// @version     1.0.1
+// @version     1.0.2
 // @description 自动填写 Geely VDI 一次性验证码。使用唯一设备密钥加密 TOTP 密钥，并存储在 localStorage, 支持通过菜单重新输入 TOTP 密钥。仅供学习研究使用，作者不对该脚本产生的任何行为负责。
 // @author      zcteo.cn@gmail.com
 // @include     https://*vdi.geely.com/logon/LogonPoint/tmindex.html
@@ -19,6 +19,8 @@
     document.documentElement.dataset.__geely_vdi_totp_running__ = "true";
     const SITE_KEY = "geely_vdi_totp_encrypted";      // 存储加密 TOTP 密钥的键
     const KEY_STORAGE = "geely_vdi_device_encryption_key"; // 存储设备密钥的键
+    const USER_KEY = "geely_vdi_username"; // 存储用户名的键
+    const PASS_KEY = "geely_vdi_password"; // 存储密码的键
 
     // 判断运行环境（Chrome 扩展 vs 油猴）
     const isTamperMonkey = typeof GM_registerMenuCommand !== "undefined";
@@ -182,12 +184,22 @@
 
 
     // 自动填写 TOTP，每秒更新 OTP 并填入输入框
-    async function fillTotp(otpInput) {
+    async function fillTotp(otpInput, userInput, passInput) {
         let encryptedData = await storageGet(SITE_KEY);
         if (!encryptedData) {
             const success = await inputKey();
             if (!success) return;
             encryptedData = await storageGet(SITE_KEY);
+        }
+        let userData = await storageGet(USER_KEY);
+        if (userData) {
+            userData = await decryptTOTP(userData);
+            userInput.value = userData;
+        }
+        let passData = await storageGet(PASS_KEY);
+        if (passData) {
+            passData = await decryptTOTP(passData);
+            passInput.value = passData;
         }
         const totpKey = await decryptTOTP(encryptedData);
         if (!totpKey) return alert("❌ 解密失败，无法生成 TOTP！");
@@ -204,15 +216,43 @@
         fill();
         setInterval(fill, 1000);
     }
+    
+    // 保存用户信息
+    async function storageUserInfo(userInput, passInput) {
+        console.log("🔢 已保存用户信息");
+        if (userInput && passInput) {
+            if (userInput.value !== "" && passInput.value !== "") {
+                const userData = await encryptTOTP(userInput.value);
+                const passData = await encryptTOTP(passInput.value);
+                await storageSet({ [USER_KEY]: userData });
+                await storageSet({ [PASS_KEY]: passData });
+            }
+        }
+        return true;
+    }
 
-    function waitForLoad() {
+    // 等待页面加载完成
+    async function waitForLoad() {
         let attempts = 0;
-        const interval = setInterval(() => {
+        let initEvent = false;
+        const interval = setInterval(async () => {
+            const userInput = document.getElementById("login");
+            const passInput = document.getElementById("passwd");
             const otpInput = document.getElementById("passwd1");
             const loginButton = document.getElementById("Logon");
+            // 监听表单提交事件
+            if (loginButton && !initEvent) {
+                initEvent = true;
+                loginButton.addEventListener('click', async function () {
+                    await storageUserInfo(userInput, passInput);
+                });
+            }
             if (otpInput && loginButton) {
-                clearInterval(interval);
-                fillTotp(otpInput);
+                fillTotp(otpInput, userInput, passInput);
+                if (userInput.value !== "" && passInput.value !== "") {
+                    clearInterval(interval);
+                    loginButton.click();
+                }
             } else if (attempts > 10) {
                 clearInterval(interval);
                 console.warn("❌ 超时");
