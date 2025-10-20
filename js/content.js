@@ -6,7 +6,8 @@
 // @author      zcteo.cn@gmail.com
 // @include     https://*vdi.geely.com/logon/LogonPoint/tmindex.html
 // @grant       GM_registerMenuCommand
-// @license     GPL-3.0
+// @license     GPL-3.0-only
+// @copyright   2025, https://github.com/zcteo
 // ==/UserScript==
 
 (async function () {
