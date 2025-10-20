@@ -1,12 +1,13 @@
 // ==UserScript==
-// @name        Geely VDI 登录助手
+// @name        Geely VDI Assistant
 // @namespace   https://github.com/zcteo
-// @version     1.0.2
+// @version     1.0.3
 // @description 自动填写 Geely VDI 一次性验证码。使用唯一设备密钥加密 TOTP 密钥，并存储在 localStorage, 支持通过菜单重新输入 TOTP 密钥。仅供学习研究使用，作者不对该脚本产生的任何行为负责。
-// @author      zcteo.cn@gmail.com
+// @author      zcteo.cn@gmail.com, www@cnzxo.com
 // @include     https://*vdi.geely.com/logon/LogonPoint/tmindex.html
 // @grant       GM_registerMenuCommand
-// @license     GPL-3.0
+// @license     GPL-3.0-only
+// @copyright   2025, https://github.com/zcteo
 // ==/UserScript==
 
 (async function () {
@@ -216,7 +217,7 @@
         fill();
         setInterval(fill, 1000);
     }
-    
+
     // 保存用户信息
     async function storageUserInfo(userInput, passInput) {
         console.log("🔢 已保存用户信息");

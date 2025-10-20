@@ -4,25 +4,37 @@
 
 支持篡改猴 (Tampermonkey) 和 Chrome 扩展
 
-仅供学习研究使用，作者不对该脚本产生的任何行为负责。
-
-> 作者：zcteo.cn@gmail.com
+**仅供学习研究使用，作者不对该脚本产生的任何行为负责。**
 
 ## Tampermonkey 脚本
 
+Tampermonkey 又叫油猴或篡改猴
+
 Tampermonkey 插件的安装不在这里描述
 
-### 能访问油叉 Greasyfork
+### 通过代码库安装
 
-访问油叉 [首页](https://greasyfork.org/zh-CN/) 搜索 `Geely VDI` 
+直接访问下列链接之一，篡改猴应该会直接弹出安装选项
 
-或者直接访问 [Geely VDI 登录助手](https://greasyfork.org/zh-CN/scripts/531320-geely-vdi-%E7%99%BB%E5%BD%95%E5%8A%A9%E6%89%8B)
+如果没弹出安装页面，就全选内容，点击篡改猴图标 -> 添加新脚本 -> 粘贴 -> ctrl +s 保存
 
-### 不能访问油叉
+github 链接 <https://raw.githubusercontent.com/zcteo/geely-vdi-assistant/master/js/content.user.js>
 
-全选复制 `js/content.js` 内容
+gitee 加速链接 <https://gitee.com/zcteo/geely-vdi-assistant/raw/master/js/content.user.js>
 
-点击篡改猴图标 -> 添加新脚本 -> 粘贴 -> `ctrl +s` 保存
+### 通过脚本管理网站安装
+
+**Greasyfork**
+
+访问油叉首页 <https://greasyfork.org/zh-CN/> 搜索 `Geely VDI`
+
+或直接访问 <https://greasyfork.org/zh-CN/scripts/531320-geely-vdi-assistant>
+
+**OpenUserJS**
+
+访问首页 <https://openuserjs.org/> 搜索 `Geely VDI`
+
+或直接访问 <https://openuserjs.org/scripts/zcteo/Geely_VDI_Assistant>
 
 ## Chrome 扩展
 
