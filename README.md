@@ -42,4 +42,6 @@ gitee 加速链接 <https://gitee.com/zcteo/geely-vdi-assistant/raw/master/js/co
 
 下载整个项目 -> 浏览器管理扩展 -> 打开开发者模式 -> 加载已解压的扩展程序
 
-> 上到扩展商店的事情，在做了，在做了
+插件已上传到 edge 扩展商店，[点击前往](https://microsoftedge.microsoft.com/addons/detail/lpnfgdcdpnikhkegpofbjdeioakjefbc)
+
+> 上到 chrome 扩展商店的事情，在做了，在做了
