@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name        Geely VDI Assistant
 // @namespace   https://github.com/zcteo
-// @version     1.0.3
+// @version     1.0.4
 // @description 自动填写 Geely VDI 一次性验证码。使用唯一设备密钥加密 TOTP 密钥，并存储在 localStorage, 支持通过菜单重新输入 TOTP 密钥。仅供学习研究使用，作者不对该脚本产生的任何行为负责。
 // @author      zcteo.cn@gmail.com, www@cnzxo.com
 // @include     https://*vdi.geely.com/logon/LogonPoint/tmindex.html
 // @grant       GM_registerMenuCommand
+// @grant       GM_setValue
+// @grant       GM_getValue
 // @license     GPL-3.0-only
 // @copyright   2025, https://github.com/zcteo
 // ==/UserScript==
@@ -28,27 +30,21 @@
     const isChromeExtension = typeof chrome !== "undefined" && chrome.storage;
 
     // **存储适配层**
-    function storageGet(key) {
-        return new Promise((resolve) => {
-            if (isChromeExtension) {
-                chrome.storage.local.get(key, (result) => resolve(result[key]));
-            } else {
-                resolve(localStorage.getItem(key) ? JSON.parse(localStorage.getItem(key)) : null);
-            }
-        });
+    async function storageGet(key) {
+        if (isChromeExtension) {
+            const result = await new Promise(resolve => chrome.storage.local.get(key, resolve));
+            return result[key];
+        } else {
+            return GM_getValue(key, null);
+        }
     }
 
-    function storageSet(obj) {
-        return new Promise((resolve) => {
-            if (isChromeExtension) {
-                chrome.storage.local.set(obj, resolve);
-            } else {
-                Object.entries(obj).forEach(([key, value]) => {
-                    localStorage.setItem(key, JSON.stringify(value));
-                });
-                resolve();
-            }
-        });
+    async function storageSet(key, value) {
+        if (isChromeExtension) {
+            await new Promise(resolve => chrome.storage.local.set({ [key]: value }, resolve));
+        } else {
+            GM_setValue(key, value);
+        }
     }
 
     // 获取或生成设备密钥（用于加密 TOTP 密钥）
@@ -71,7 +67,7 @@
                 ["encrypt", "decrypt"]
             );
             const exportedKey = await crypto.subtle.exportKey("raw", key);
-            await storageSet({ [KEY_STORAGE]: Array.from(new Uint8Array(exportedKey)) });
+            await storageSet(KEY_STORAGE, Array.from(new Uint8Array(exportedKey)));
             return key;
         }
     }
@@ -178,14 +174,14 @@
             return false;
         }
         let encryptedData = await encrypt(totpKey);
-        await storageSet({ [SITE_KEY]: encryptedData });
+        await storageSet(SITE_KEY, encryptedData);
         alert("✅ TOTP 密钥已加密存储！");
         return true;
     }
 
 
     // 自动填写信息，每秒更新 OTP 并填入输入框
-    async function fillInfo(otpInput, userInput, passInput) {
+    async function fillInfo(userInput, passInput) {
         let encryptedData = await storageGet(SITE_KEY);
         if (!encryptedData) {
             const success = await inputKey();
@@ -205,16 +201,16 @@
         const totpKey = await decrypt(encryptedData);
         if (!totpKey) return alert("❌ 解密失败，无法生成 TOTP！");
         const fill = async () => {
-            const otp = await generateTOTP(totpKey);
-            otpInput.value = otp;
+            const otpInput = document.getElementById("passwd1");
+            const otpValue = await generateTOTP(totpKey);
+            otpInput.value = otpValue;
             if (isTamperMonkey) {
-                console.log("🔢 TamperMonkey 生成 OTP:", otp);
-            }
-            else {
-                console.log("🔢 ChromeExtension 生成 OTP:", otp);
+                console.log("🔢 TamperMonkey 生成 OTP:", otpValue);
+            } else {
+                console.log("🔢 ChromeExtension 生成 OTP:", otpValue);
             }
         };
-        fill();
+        await fill();
         setInterval(fill, 1000);
     }
 
@@ -225,8 +221,8 @@
             if (userInput.value !== "" && passInput.value !== "") {
                 const userData = await encrypt(userInput.value);
                 const passData = await encrypt(passInput.value);
-                await storageSet({ [USER_KEY]: userData });
-                await storageSet({ [PASS_KEY]: passData });
+                await storageSet(USER_KEY, userData);
+                await storageSet(PASS_KEY, passData);
             }
         }
         return true;
@@ -235,23 +231,19 @@
     // 等待页面加载完成
     async function waitForLoad() {
         let attempts = 0;
-        let initEvent = false;
         const interval = setInterval(async () => {
             const userInput = document.getElementById("login");
             const passInput = document.getElementById("passwd");
             const otpInput = document.getElementById("passwd1");
             const loginButton = document.getElementById("Logon");
-            // 监听表单提交事件
-            if (loginButton && !initEvent) {
-                initEvent = true;
+            if (userInput && passInput && otpInput && loginButton) {
+                clearInterval(interval);
+                // 监听表单提交事件
                 loginButton.addEventListener('click', async function () {
                     await saveUserInfo(userInput, passInput);
                 });
-            }
-            if (otpInput && loginButton) {
-                fillInfo(otpInput, userInput, passInput);
-                if (userInput.value !== "" && passInput.value !== "") {
-                    clearInterval(interval);
+                await fillInfo(userInput, passInput);
+                if (userInput.value !== "" && passInput.value !== "" && otpInput.value !== "") {
                     loginButton.click();
                 }
             } else if (attempts > 10) {

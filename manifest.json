@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Geely VDI 登录助手",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "自动填写 Geely VDI 一次性验证码",
     "content_scripts": [
         {
