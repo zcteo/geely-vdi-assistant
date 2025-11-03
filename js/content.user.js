@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Geely VDI Assistant
 // @namespace   https://github.com/zcteo
-// @version     1.0.5
+// @version     1.0.6
 // @description 自动填写 Geely VDI 一次性验证码。使用唯一设备密钥加密 TOTP 密钥，并存储在 localStorage, 支持通过菜单重新输入 TOTP 密钥。仅供学习研究使用，作者不对该脚本产生的任何行为负责。
 // @author      zcteo.cn@gmail.com, www@cnzxo.com
 // @include     https://*vdi.geely.com/*
@@ -32,7 +32,7 @@
     // **存储适配层**
     async function storageGet(key) {
         if (isChromeExtension) {
-            const result = await new Promise(resolve => chrome.storage.local.get(key, resolve));
+            const result = await chrome.storage.local.get(key);
             return result[key];
         } else {
             return GM_getValue(key, null);
@@ -41,7 +41,7 @@
 
     async function storageSet(key, value) {
         if (isChromeExtension) {
-            await new Promise(resolve => chrome.storage.local.set({ [key]: value }, resolve));
+            await chrome.storage.local.set({ [key]: value });
         } else {
             GM_setValue(key, value);
         }
