@@ -92,8 +92,8 @@
         );
     }
 
-    // 加密 TOTP 密钥，返回包含 IV 与密文的 JSON 字符串
-    async function encryptTOTP(secret) {
+    // 加密数据，返回包含 IV 与密文的 JSON 字符串
+    async function encrypt(secret) {
         const key = await getDeviceKeyForEncryption();
         const encoder = new TextEncoder();
         const iv = crypto.getRandomValues(new Uint8Array(12)); // 随机生成 IV
@@ -110,8 +110,8 @@
         });
     }
 
-    // 解密 TOTP 密钥
-    async function decryptTOTP(encryptedData) {
+    // 解密
+    async function decrypt(encryptedData) {
         try {
             const key = await getDeviceKeyForDecryption();
             const { iv, data } = JSON.parse(encryptedData);
@@ -177,15 +177,15 @@
             alert("❌ 未输入密钥，操作终止！");
             return false;
         }
-        let encryptedData = await encryptTOTP(totpKey);
+        let encryptedData = await encrypt(totpKey);
         await storageSet({ [SITE_KEY]: encryptedData });
         alert("✅ TOTP 密钥已加密存储！");
         return true;
     }
 
 
-    // 自动填写 TOTP，每秒更新 OTP 并填入输入框
-    async function fillTotp(otpInput, userInput, passInput) {
+    // 自动填写信息，每秒更新 OTP 并填入输入框
+    async function fillInfo(otpInput, userInput, passInput) {
         let encryptedData = await storageGet(SITE_KEY);
         if (!encryptedData) {
             const success = await inputKey();
@@ -194,15 +194,15 @@
         }
         let userData = await storageGet(USER_KEY);
         if (userData) {
-            userData = await decryptTOTP(userData);
+            userData = await decrypt(userData);
             userInput.value = userData;
         }
         let passData = await storageGet(PASS_KEY);
         if (passData) {
-            passData = await decryptTOTP(passData);
+            passData = await decrypt(passData);
             passInput.value = passData;
         }
-        const totpKey = await decryptTOTP(encryptedData);
+        const totpKey = await decrypt(encryptedData);
         if (!totpKey) return alert("❌ 解密失败，无法生成 TOTP！");
         const fill = async () => {
             const otp = await generateTOTP(totpKey);
@@ -219,12 +219,12 @@
     }
 
     // 保存用户信息
-    async function storageUserInfo(userInput, passInput) {
+    async function saveUserInfo(userInput, passInput) {
         console.log("🔢 已保存用户信息");
         if (userInput && passInput) {
             if (userInput.value !== "" && passInput.value !== "") {
-                const userData = await encryptTOTP(userInput.value);
-                const passData = await encryptTOTP(passInput.value);
+                const userData = await encrypt(userInput.value);
+                const passData = await encrypt(passInput.value);
                 await storageSet({ [USER_KEY]: userData });
                 await storageSet({ [PASS_KEY]: passData });
             }
@@ -245,11 +245,11 @@
             if (loginButton && !initEvent) {
                 initEvent = true;
                 loginButton.addEventListener('click', async function () {
-                    await storageUserInfo(userInput, passInput);
+                    await saveUserInfo(userInput, passInput);
                 });
             }
             if (otpInput && loginButton) {
-                fillTotp(otpInput, userInput, passInput);
+                fillInfo(otpInput, userInput, passInput);
                 if (userInput.value !== "" && passInput.value !== "") {
                     clearInterval(interval);
                     loginButton.click();
