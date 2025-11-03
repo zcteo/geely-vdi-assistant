@@ -6,6 +6,8 @@
 // @author      zcteo.cn@gmail.com, www@cnzxo.com
 // @include     https://*vdi.geely.com/logon/LogonPoint/tmindex.html
 // @grant       GM_registerMenuCommand
+// @grant       GM_setValue
+// @grant       GM_getValue
 // @license     GPL-3.0-only
 // @copyright   2025, https://github.com/zcteo
 // ==/UserScript==
@@ -28,27 +30,21 @@
     const isChromeExtension = typeof chrome !== "undefined" && chrome.storage;
 
     // **存储适配层**
-    function storageGet(key) {
-        return new Promise((resolve) => {
-            if (isChromeExtension) {
-                chrome.storage.local.get(key, (result) => resolve(result[key]));
-            } else {
-                resolve(localStorage.getItem(key) ? JSON.parse(localStorage.getItem(key)) : null);
-            }
-        });
+    async function storageGet(key) {
+        if (isChromeExtension) {
+            const result = await new Promise(resolve => chrome.storage.local.get(key, resolve));
+            return result[key];
+        } else {
+            return GM_getValue(key, null);
+        }
     }
 
-    function storageSet(obj) {
-        return new Promise((resolve) => {
-            if (isChromeExtension) {
-                chrome.storage.local.set(obj, resolve);
-            } else {
-                Object.entries(obj).forEach(([key, value]) => {
-                    localStorage.setItem(key, JSON.stringify(value));
-                });
-                resolve();
-            }
-        });
+    async function storageSet(key, value) {
+        if (isChromeExtension) {
+            await new Promise(resolve => chrome.storage.local.set({ [key]: value }, resolve));
+        } else {
+            GM_setValue(key, value);
+        }
     }
 
     // 获取或生成设备密钥（用于加密 TOTP 密钥）
@@ -71,7 +67,7 @@
                 ["encrypt", "decrypt"]
             );
             const exportedKey = await crypto.subtle.exportKey("raw", key);
-            await storageSet({ [KEY_STORAGE]: Array.from(new Uint8Array(exportedKey)) });
+            await storageSet(KEY_STORAGE, Array.from(new Uint8Array(exportedKey)));
             return key;
         }
     }
@@ -178,14 +174,14 @@
             return false;
         }
         let encryptedData = await encrypt(totpKey);
-        await storageSet({ [SITE_KEY]: encryptedData });
+        await storageSet(SITE_KEY, encryptedData);
         alert("✅ TOTP 密钥已加密存储！");
         return true;
     }
 
 
     // 自动填写信息，每秒更新 OTP 并填入输入框
-    async function fillInfo(otpInput, userInput, passInput) {
+    async function fillInfo(userInput, passInput) {
         let encryptedData = await storageGet(SITE_KEY);
         if (!encryptedData) {
             const success = await inputKey();
@@ -205,13 +201,13 @@
         const totpKey = await decrypt(encryptedData);
         if (!totpKey) return alert("❌ 解密失败，无法生成 TOTP！");
         const fill = async () => {
-            const otp = await generateTOTP(totpKey);
-            otpInput.value = otp;
+            const otpInput = document.getElementById("passwd1");
+            const otpValue = await generateTOTP(totpKey);
+            otpInput.value = otpValue;
             if (isTamperMonkey) {
-                console.log("🔢 TamperMonkey 生成 OTP:", otp);
-            }
-            else {
-                console.log("🔢 ChromeExtension 生成 OTP:", otp);
+                console.log("🔢 TamperMonkey 生成 OTP:", otpValue);
+            } else {
+                console.log("🔢 ChromeExtension 生成 OTP:", otpValue);
             }
         };
         await fill();
@@ -225,8 +221,8 @@
             if (userInput.value !== "" && passInput.value !== "") {
                 const userData = await encrypt(userInput.value);
                 const passData = await encrypt(passInput.value);
-                await storageSet({ [USER_KEY]: userData });
-                await storageSet({ [PASS_KEY]: passData });
+                await storageSet(USER_KEY, userData);
+                await storageSet(PASS_KEY, passData);
             }
         }
         return true;
@@ -246,7 +242,7 @@
                 loginButton.addEventListener('click', async function () {
                     await saveUserInfo(userInput, passInput);
                 });
-                await fillInfo(otpInput, userInput, passInput);
+                await fillInfo(userInput, passInput);
                 if (userInput.value !== "" && passInput.value !== "" && otpInput.value !== "") {
                     loginButton.click();
                 }
