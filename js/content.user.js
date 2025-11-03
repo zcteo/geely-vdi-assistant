@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Geely VDI Assistant
 // @namespace   https://github.com/zcteo
-// @version     1.0.3
+// @version     1.0.4
 // @description 自动填写 Geely VDI 一次性验证码。使用唯一设备密钥加密 TOTP 密钥，并存储在 localStorage, 支持通过菜单重新输入 TOTP 密钥。仅供学习研究使用，作者不对该脚本产生的任何行为负责。
 // @author      zcteo.cn@gmail.com, www@cnzxo.com
 // @include     https://*vdi.geely.com/logon/LogonPoint/tmindex.html
@@ -214,7 +214,7 @@
                 console.log("🔢 ChromeExtension 生成 OTP:", otp);
             }
         };
-        fill();
+        await fill();
         setInterval(fill, 1000);
     }
 
@@ -235,23 +235,19 @@
     // 等待页面加载完成
     async function waitForLoad() {
         let attempts = 0;
-        let initEvent = false;
         const interval = setInterval(async () => {
             const userInput = document.getElementById("login");
             const passInput = document.getElementById("passwd");
             const otpInput = document.getElementById("passwd1");
             const loginButton = document.getElementById("Logon");
-            // 监听表单提交事件
-            if (loginButton && !initEvent) {
-                initEvent = true;
+            if (userInput && passInput && otpInput && loginButton) {
+                clearInterval(interval);
+                // 监听表单提交事件
                 loginButton.addEventListener('click', async function () {
                     await saveUserInfo(userInput, passInput);
                 });
-            }
-            if (otpInput && loginButton) {
-                fillInfo(otpInput, userInput, passInput);
-                if (userInput.value !== "" && passInput.value !== "") {
-                    clearInterval(interval);
+                await fillInfo(otpInput, userInput, passInput);
+                if (userInput.value !== "" && passInput.value !== "" && otpInput.value !== "") {
                     loginButton.click();
                 }
             } else if (attempts > 10) {
