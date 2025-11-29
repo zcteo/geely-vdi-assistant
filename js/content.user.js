@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Geely VDI Assistant
 // @namespace   https://github.com/zcteo
-// @version     1.0.6
+// @version     1.0.7
 // @description 自动填写 Geely VDI 一次性验证码。使用唯一设备密钥加密 TOTP 密钥，并存储在 localStorage, 支持通过菜单重新输入 TOTP 密钥。仅供学习研究使用，作者不对该脚本产生的任何行为负责。
 // @author      zcteo.cn@gmail.com, www@cnzxo.com
 // @include     https://*vdi.geely.com/*
@@ -239,8 +239,13 @@
             if (userInput && passInput && otpInput && loginButton) {
                 clearInterval(interval);
                 // 监听表单提交事件
-                loginButton.addEventListener('click', async function () {
-                    await saveUserInfo(userInput, passInput);
+                document.addEventListener("click", async (e) => {
+                    if (e.target.id === "Logon") {
+                        await saveUserInfo(
+                            document.getElementById("login"),
+                            document.getElementById("passwd")
+                        );
+                    }
                 });
                 await fillInfo(userInput, passInput);
                 if (userInput.value !== "" && passInput.value !== "" && otpInput.value !== "") {
